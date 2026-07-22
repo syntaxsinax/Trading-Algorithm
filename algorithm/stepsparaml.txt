@@ -1,0 +1,128 @@
+Phase 1 – Build the trade logger (first)
+
+Every trade should automatically be saved to a database once it closes.
+
+For every completed trade, store things like:
+
+Symbol
+Entry date/time
+Exit date/time
+Entry price
+Exit price
+TP/SL
+Profit/Loss
+Win/Loss
+EMA50
+EMA200
+RSI
+News sentiment
+Volume
+ATR
+Market direction (SPY/QQQ)
+Duration of trade
+
+At this stage, don't worry about machine learning at all. Just collect clean, consistent data.
+
+Phase 2 – Move from CSVs to a database
+
+Instead of writing trades to CSV files, create a database.
+
+I'd recommend SQLite because:
+
+it's built into Python
+no server required
+fast enough for this project
+works well with pandas and scikit-learn
+
+You'll end up with something like:
+
+trades.db
+
+Trades
+--------
+id
+symbol
+entry_time
+exit_time
+entry_price
+exit_price
+ema50
+ema200
+rsi
+sentiment
+atr
+volume_ratio
+tp
+sl
+profit
+win
+
+This becomes your training dataset.
+
+Phase 3 – Add news sentiment
+
+Only after the database is working.
+
+Your trading flow becomes:
+
+EMA + RSI signal
+        │
+        ▼
+Fetch latest news
+        │
+        ▼
+Calculate sentiment score
+        │
+        ▼
+Store sentiment with trade
+
+Notice you're not filtering trades yet. You're just recording the sentiment alongside each trade.
+
+Phase 4 – Collect data
+
+This is the hardest part because it takes time.
+
+Ideally you want:
+
+1,000+ completed trades
+5,000+ is much better
+10,000+ is excellent
+
+The more diverse the data, the better the model can generalize.
+
+Phase 5 – Train the first model
+
+Your first target variable is simple:
+
+Did this trade hit TP before SL?
+
+1 = Win
+0 = Loss
+
+The model's job is to predict that probability from the features you logged.
+
+Phase 6 – Integrate into live trading
+
+Your live bot becomes:
+
+EMA/RSI says BUY
+
+↓
+
+Feature builder
+
+↓
+
+ML model predicts
+
+82%
+
+↓
+
+Threshold = 75%
+
+↓
+
+Place order
+
+If the prediction is below your threshold, the bot skips the trade.
