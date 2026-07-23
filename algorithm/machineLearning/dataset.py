@@ -1,4 +1,5 @@
 import pandas as pd
+from pathlib import Path
 from marketSignals.indicator import calculate_ema, calculate_rsi
 
 # ----------------------------------
@@ -9,12 +10,13 @@ symbols = [
     "AAPL", "NVDA", "GOOGL",
     "MSFT", "META", "CRDO",
     "DELL", "INTC", "AMZN",
-    "^GSPC", "QQQ", "SPY",
+    "QQQ", "SPY",
     "XLE", "GLD"
 ]
 
 TP_PCT = 0.06
 SL_PCT = 0.02
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # ----------------------------------
@@ -33,9 +35,18 @@ def add_indicators(df):
 
     closes = df["Close"].tolist()
 
-    df["EMA50"] = calculate_ema(closes, 50)
-    df["EMA200"] = calculate_ema(closes, 200)
-    df["RSI"] = calculate_rsi(closes, 14)
+    ema50 = calculate_ema(closes, 50)
+    ema200 = calculate_ema(closes, 200)
+    rsi = calculate_rsi(closes, 14)
+
+    df["EMA50"] = ema50
+    df["EMA200"] = ema200
+
+    # Pad RSI to match dataframe length
+    if len(rsi) < len(df):
+        rsi = [None] * (len(df) - len(rsi)) + rsi
+
+    df["RSI"] = rsi
 
     return df
 
@@ -49,12 +60,13 @@ dataset = []
 for symbol in symbols:
 
     print(f"Processing {symbol}...")
+    csv_file = BASE_DIR / f"{symbol}_1h.csv"
 
     try:
-        df = load_csv(f"../{symbol}_1h.csv")
-    except FileNotFoundError:
-        print(f"{symbol}_1h.csv not found")
-        continue
+        df = load_csv(csv_file)
+    except Exception as e:
+        print(f"Error processing {symbol}: {e}")
+        raise
 
     df = add_indicators(df)
 
@@ -123,3 +135,4 @@ dataset.to_csv("training_dataset.csv", index=False)
 print("\nDataset created successfully!")
 print(dataset.head())
 print(f"\nTotal samples: {len(dataset)}")
+print(dataset["Outcome"].value_counts())
