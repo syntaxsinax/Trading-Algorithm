@@ -1,10 +1,6 @@
 import requests
-import csv
-import os
-from datetime import datetime
 
-LOGFILE = "trade_log.csv"
-APIKEY = "your_free_key_here"
+API_KEY = "YOUR_API_KEY"
 
 symbols = ["AAPL", "NVDA", "GOOGL", 
            "MSFT", "META", "CRDO", 
@@ -12,30 +8,41 @@ symbols = ["AAPL", "NVDA", "GOOGL",
            "QQQ", "SPY", 
            "GLD",  "XLE" ]
 
-def get_tickerSentiment():
-    url ="https://www.alphavantage.co/query"
-    params ={
-        "function": "NEWS_SENTIMENT",
-        "tickers": {symbols},
-        "apikey": APIKEY
-    }
-    data = requests.get(url, params=params).json()
-    articles = data.get("feed", [])
-    return [
-        {"headline": a["title"], "sentiment": float(a["overall_sentiment_score"])}
-        for a in articles
-    ]
+def get_sentiment(symbols):
+
+    url = (
+        f"https://www.alphavantage.co/query?"
+        f"function=NEWS_SENTIMENT"
+        f"&tickers={symbols}"
+        f"&apikey={API_KEY}"
+    )
+
+    response = requests.get(url)
+    data = response.json()
+
+    feed = data.get("feed", [])
+
+    if not feed:
+        return None
+
+    scores = []
+
+    for article in feed:
+
+        for ticker in article.get("ticker_sentiment", []):
+
+            if ticker["ticker"] == {symbols}:
+
+                scores.append(
+                    float(ticker["ticker_sentiment_score"])
+                )
+
+    if not scores:
+        return None
+
+    return sum(scores) / len(scores)
 
 
-def log_sentiment(ticker, avg_sentiment):
-    file_exists = os.path.isfile(LOGFILE)
-    with open(LOGFILE, "a", newline="") as f:
-        writer = csv.writer(f)
-        if not file_exists:
-            writer.writerow(["timestamp", "ticker", "avg_sentiment", "trade_result"])
-        writer.writerow([datetime.now(), ticker, avg_sentiment, ""])
+if __name__ == "__main__":
 
-
-sentiment_data = get_tickerSentiment({symbols})
-avg_sentiment = sum(a["sentiment"] for a in sentiment_data) / len(sentiment_data)
-log_sentiment({symbols}, avg_sentiment)
+    print(get_sentiment("NVDA"))
