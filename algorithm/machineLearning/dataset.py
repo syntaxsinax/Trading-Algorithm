@@ -51,7 +51,7 @@ for symbol in symbols:
     print(f"Processing {symbol}...")
 
     try:
-        df = load_csv(f"{symbol}_1h.csv")
+        df = load_csv(f"../{symbol}_1h.csv")
     except FileNotFoundError:
         print(f"{symbol}_1h.csv not found")
         continue
