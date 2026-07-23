@@ -42,3 +42,61 @@ def create_database():
 if __name__ == "__main__":
     create_database()
     print("✅ trades.db created successfully")
+
+def log_trade(
+    symbol,
+    entry_time,
+    exit_time,
+    entry_price,
+    exit_price,
+    take_profit,
+    stop_loss,
+    quantity,
+    ema50,
+    ema200,
+    rsi,
+    sentiment,
+    profit,
+    outcome
+):
+
+    conn = sqlite3.connect("trades.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    INSERT INTO trades(
+        symbol,
+        entry_time,
+        exit_time,
+        entry_price,
+        exit_price,
+        take_profit,
+        stop_loss,
+        quantity,
+        ema50,
+        ema200,
+        rsi,
+        sentiment,
+        profit,
+        outcome
+    )
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    """, (
+        symbol,
+        entry_time,
+        exit_time,
+        entry_price,
+        exit_price,
+        take_profit,
+        stop_loss,
+        quantity,
+        ema50,
+        ema200,
+        rsi,
+        sentiment,
+        profit,
+        outcome
+    ))
+
+    conn.commit()
+    conn.close()
