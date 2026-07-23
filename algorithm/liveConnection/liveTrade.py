@@ -3,6 +3,7 @@ from .ibkr import connect_ibkr, get_bars
 import time
 from marketSignals.indicator import calculate_ema, calculate_rsi
 from marketSignals.strategy import check_entry
+from machineLearning.fundamentals import get_sentiment
 # --------------------------
 # SETTINGS
 # --------------------------
@@ -152,6 +153,10 @@ while True:
             if daily_trade_count >= MAX_DAILY_TRADES:
                 print("Daily trade limit reached, skipping.")
                 break
+
+            sentiment = get_sentiment(symbol)
+
+            print(f"{symbol} sentiment: {sentiment}")
 
             print(f"ENTRY INITIATED FOR {symbol}")
             entry_price = round(closes[-1], 2)
