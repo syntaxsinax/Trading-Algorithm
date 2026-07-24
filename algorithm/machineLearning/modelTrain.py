@@ -1,14 +1,14 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sk.metrics import accuracy_score, classification_report
-import joblibs
+from sklearn.metrics import accuracy_score, classification_report
+import joblib
 
 df = pd.read_csv("training_dataset.csv")
 
-features ["EMA50", "EMA200", "RSI", "Volume"]
+features = ["EMA50", "EMA200", "RSI", "Volume"]
 
-x = df[features]
+X = df[features]
 y = df["Outcome"]
 
 X_train, X_test, y_train, y_test = train_test_split(
