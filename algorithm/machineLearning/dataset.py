@@ -1,6 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from marketSignals.indicator import calculate_ema, calculate_rsi
+from data.database.tradeRepo import insertTrade
 
 # ----------------------------------
 # SETTINGS
@@ -17,6 +18,9 @@ symbols = [
 TP_PCT = 0.06
 SL_PCT = 0.02
 BASE_DIR = Path(__file__).resolve().parent.parent
+total_samples = 0
+wins = 0
+losses = 0
 
 
 # ----------------------------------
@@ -55,7 +59,6 @@ def add_indicators(df):
 # BUILD DATASET
 # ----------------------------------
 
-dataset = []
 
 for symbol in symbols:
 
@@ -110,29 +113,29 @@ for symbol in symbols:
         if outcome is None:
             continue
 
-        dataset.append({
-            "Symbol": symbol,
-            "Entry_Date": df["Datetime"][i],
-            "Exit_Date": exit_date,
-            "Entry": entry,
-            "Exit": exit_price,
-            "EMA50": df["EMA50"][i],
-            "EMA200": df["EMA200"][i],
-            "RSI": df["RSI"][i],
-            "Volume": df["Volume"][i],
-            "Outcome": outcome
+        insertTrade({
+            "symbol": symbol,
+            "entry_date": pd.to_datetime(df["Datetime"][i]).to_pydatetime(),
+            "ema50": float(df["EMA50"][i]),
+            "ema200": float(df["EMA200"][i]),
+            "rsi": float(df["RSI"][i]),
+            "volume": int(df["Volume"][i]),
+            "sentiment": None,
+            "entry_price": float(entry),
+            "outcome": int(outcome)
         })
+        total_samples += 1
+
+        if outcome == 1:
+            wins += 1
+        else:
+            losses += 1
 
 
 # ----------------------------------
 # SAVE DATASET
 # ----------------------------------
-
-dataset = pd.DataFrame(dataset)
-
-dataset.to_csv("training_dataset.csv", index=False)
-
-print("\nDataset created successfully!")
-print(dataset.head())
-print(f"\nTotal samples: {len(dataset)}")
-print(dataset["Outcome"].value_counts())
+print("\nDataset imported successfully!")
+print(f"Total trades inserted: {total_samples}")
+print(f"Wins: {wins}")
+print(f"Losses: {losses}")

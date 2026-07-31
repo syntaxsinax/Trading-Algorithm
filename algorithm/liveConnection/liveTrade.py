@@ -4,6 +4,8 @@ import time
 from marketSignals.indicator import calculate_ema, calculate_rsi
 from marketSignals.strategy import check_entry
 from machineLearning.fundamentals import get_sentiment
+import joblib
+from data.database.tradeRepo import insertTrade
 # --------------------------
 # SETTINGS
 # --------------------------
@@ -18,6 +20,13 @@ STOP_LOSS_PCT   = 0.02
 POSITION_PCT    = 0.02   
 MAX_POSITIONS   = 4    
 MAX_DAILY_TRADES = 3
+ML_THRESHOLD = 0.60
+
+
+# -------------------------
+model = joblib.load("trade_model.pkl")
+print("ML model successfully loaded.")
+# -------------------------
 daily_trade_count = 0
 
 # --------------------------
@@ -120,6 +129,7 @@ while True:
             continue
 
         closes = [b.close for b in bars]
+        volumes = [b.volume for b in bars]
 
         # ---------------- INDICATORS (for debug only) ----------------
         ema50  = calculate_ema(closes, 50)
@@ -158,14 +168,30 @@ while True:
 
             print(f"{symbol} sentiment: {sentiment}")
 
+            import pandas as pd
+
+            features = pd.DataFrame([{
+                "EMA50": ema50[-2],
+                "EMA200": ema200[-2],
+                "RSI": rsi[-2],
+                "Volume": volumes[-2]
+            }])
+
+            probability = model.predict_proba(features)[0][1]
+            print(f"Probability of Success: {probability:.2%}")
+
+            if probability < ML_THRESHOLD:
+                print(f"Trade too uncertain, ML rejection ({probability:.2%})")
+                continue
+
             print(f"ENTRY INITIATED FOR {symbol}")
             entry_price = round(closes[-1], 2)
 
             if entry_price is None or entry_price != entry_price:
-                print("⚠️ No valid price, skipping.")
+                print("No valid price, skipping.")
                 continue
 
-            # ✅ position sizing aligned with backtest
+            #
             position_size = account_value * POSITION_PCT
             shares        = int(position_size / entry_price)  # whole shares only
 
@@ -192,8 +218,7 @@ while True:
                 tif             = 'GTC'
             )
 
-            for o in bracket:
-                ib.placeOrder(contract, o)
+            
 
             ib.sleep(1)
 
@@ -201,6 +226,22 @@ while True:
             ib_positions[symbol] = shares
             daily_trade_count += 1
             print(f"✅ ORDER PLACED FOR {symbol}")
+
+            insertTrade({
+            "symbol": symbol,
+            "entry_date": bars[-1].date,
+            "ema50": float(ema50[-2]),
+            "ema200": float(ema200[-2]),
+            "rsi": float(rsi[-2]),
+            "volume": int(volumes[-2]),
+            "sentiment": sentiment,
+            "entry_price": entry_price,
+            "outcome": None,
+
+            "parent_order_id": bracket[0].orderId,
+            "tp_order_id": bracket[1].orderId,
+            "sl_order_id": bracket[2].orderId
+            })
 
     print(f"\nSleeping {poll_interval}s...\n")
     ib.sleep(poll_interval)
