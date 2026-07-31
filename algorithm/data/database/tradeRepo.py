@@ -26,7 +26,7 @@ def updateTrade(symbol, outcome):
     WHERE symbol = :symbol AND status = 'OPEN'
     ORDER BY entry_date LIMIT 1)""")
 
-    with engine.begin() as count:
+    with engine.begin() as conn:
         conn.execute(query, {"symbol": symbol, "outcome": outcome})
 
 
