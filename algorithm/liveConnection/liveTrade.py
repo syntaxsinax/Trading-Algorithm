@@ -218,7 +218,8 @@ while True:
                 tif             = 'GTC'
             )
 
-            
+            for order in bracket:
+                       ib.placeOrder(contract,order)
 
             ib.sleep(1)
 
